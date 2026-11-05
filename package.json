@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "build:shared": "npm run build --workspace=@smallweb/shared",
     "dev:api": "npm run start:dev --workspace=api",
     "dev:web": "npm run dev --workspace=web",
     "format": "prettier --write .",

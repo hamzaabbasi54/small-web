@@ -20,6 +20,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
   },
   "dependencies": {
+    "@smallweb/shared": "*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^12.1.0",
     "@nestjs/core": "^11.0.1",
