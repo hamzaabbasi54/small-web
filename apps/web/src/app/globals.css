@@ -1,0 +1,12 @@
+:root {
+  --ink: #16212c;
+  --paper: #f1f4f3;
+  --font: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font);
+}
