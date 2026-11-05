@@ -1,3 +1,5 @@
+import { Browser } from '@/features/browser/Browser';
+
 export default function Home() {
-  return <h1>Small Web</h1>;
+  return <Browser />;
 }
