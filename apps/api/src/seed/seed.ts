@@ -8,9 +8,14 @@ import { Site, SiteSchema } from '../sites/site.schema';
 import { sanitizeSiteHtml } from '../sites/html-sanitizer';
 import { PEOPLE } from './data/people';
 import { SEED_BASE_TIME, SITES } from './data/sites';
+import { VISITS } from './data/visits';
+import { Visit, VisitSchema } from '../visits/visit.schema';
+
+const MS_PER_MINUTE = 60_000;
 
 const PersonModel = mongoose.model(Person.name, PersonSchema);
 const SiteModel = mongoose.model(Site.name, SiteSchema);
+const VisitModel = mongoose.model(Visit.name, VisitSchema);
 
 async function seedPeople(): Promise<Map<string, mongoose.Types.ObjectId>> {
   const idsByName = new Map<string, mongoose.Types.ObjectId>();
@@ -56,6 +61,37 @@ async function seedSites(personIds: Map<string, mongoose.Types.ObjectId>): Promi
   console.log(`sites: ${SITES.length} upserted`);
 }
 
+async function seedVisits(personIds: Map<string, mongoose.Types.ObjectId>): Promise<void> {
+  // found and title come from the sites in the database, the same way the real endpoint sets them.
+  const sites = await SiteModel.find({}, { address: 1, title: 1 });
+  const titlesByAddress = new Map(sites.map((site) => [site.address, site.title]));
+
+  for (const visit of VISITS) {
+    const personId = personIds.get(visit.person);
+    if (!personId) {
+      throw new Error(`Seed visit ${visit.seedKey} has unknown person ${visit.person}`);
+    }
+    const address = normalizeAddress(visit.address);
+    const title = titlesByAddress.get(address) ?? null;
+    await VisitModel.updateOne(
+      { seedKey: visit.seedKey },
+      {
+        $set: {
+          seedKey: visit.seedKey,
+          personId,
+          address,
+          title,
+          found: title !== null,
+          via: visit.via,
+          visitedAt: new Date(SEED_BASE_TIME.getTime() + visit.minute * MS_PER_MINUTE),
+        },
+      },
+      { upsert: true },
+    );
+  }
+  console.log(`visits: ${VISITS.length} upserted`);
+}
+
 async function main(): Promise<void> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
@@ -64,9 +100,14 @@ async function main(): Promise<void> {
   await mongoose.connect(uri);
   try {
     // Build the indexes first, so the unique ones are in place before any upsert.
-    await Promise.all([PersonModel.syncIndexes(), SiteModel.syncIndexes()]);
+    await Promise.all([
+      PersonModel.syncIndexes(),
+      SiteModel.syncIndexes(),
+      VisitModel.syncIndexes(),
+    ]);
     const personIds = await seedPeople();
     await seedSites(personIds);
+    await seedVisits(personIds);
   } finally {
     await mongoose.disconnect();
   }
