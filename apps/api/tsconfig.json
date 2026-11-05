@@ -14,7 +14,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "types": ["node", "jest"],
-    "incremental": true,
     "forceConsistentCasingInFileNames": true
   }
 }
