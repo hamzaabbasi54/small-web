@@ -35,8 +35,19 @@ export interface SearchResultView {
   author: PersonView;
 }
 
-/** How a person arrived at an address. */
-export type VisitVia = 'typed' | 'link' | 'back' | 'forward' | 'history' | 'search' | 'publish';
+/** Every way a person can arrive at an address. The API validates `via` against this list. */
+export const VISIT_VIAS = [
+  'typed',
+  'link',
+  'back',
+  'forward',
+  'history',
+  'search',
+  'publish',
+] as const;
+
+/** How a person arrived at an address: one of VISIT_VIAS. */
+export type VisitVia = (typeof VISIT_VIAS)[number];
 
 export interface VisitView {
   id: string;

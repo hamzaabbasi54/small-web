@@ -1,9 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import type { VisitVia } from '@smallweb/shared';
+import { VISIT_VIAS, type VisitVia } from '@smallweb/shared';
 import { Person } from '../people/person.schema';
-
-const VISIT_VIAS: VisitVia[] = ['typed', 'link', 'back', 'forward', 'history', 'search', 'publish'];
 
 // A recorded fact: this person arrived at this address at this time, this way.
 // Append-only: the app inserts visits and never updates or deletes them.
