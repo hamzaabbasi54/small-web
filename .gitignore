@@ -9,3 +9,4 @@ docs/
 .cursor/
 *.local.test.ts
 *.local.spec.ts
+*.tsbuildinfo
