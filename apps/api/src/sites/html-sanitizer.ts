@@ -94,7 +94,7 @@ const TEXT_OPTIONS: sanitizeHtml.IOptions = {
   nonTextTags: ['style', 'script', 'textarea', 'option', 'noscript'],
 };
 
-export interface SanitizedSite {
+interface SanitizedSite {
   safeHtml: string;
   text: string;
 }

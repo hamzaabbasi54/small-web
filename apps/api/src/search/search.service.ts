@@ -13,7 +13,7 @@ const SNIPPET_LEAD = 40;
 // About 160 characters of the page text around the first word of the query that appears in it.
 // If none of the words appear as written (the text index also matches "tides" for "tide"), the
 // snippet is the start of the page.
-export function buildSnippet(text: string, query: string): string {
+function buildSnippet(text: string, query: string): string {
   const lowerText = text.toLowerCase();
   const positions = query
     .toLowerCase()

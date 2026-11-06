@@ -13,7 +13,7 @@ import type {
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 // Web-only code for "the server could not be reached at all". Every other code comes from the API.
-export const NETWORK_ERROR = 'NETWORK_ERROR';
+const NETWORK_ERROR = 'NETWORK_ERROR';
 
 // Every failed request becomes an ApiError, so the UI checks `error.code` in one consistent way.
 export class ApiError extends Error {

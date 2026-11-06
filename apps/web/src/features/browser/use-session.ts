@@ -17,7 +17,7 @@ export type Destination = { kind: 'page'; address: string } | { kind: 'search'; 
 
 // One arrival at the current entry. `seq` goes up on every navigation (even to the page you are
 // already on), so the view knows when to load again; `via` is how we got here.
-export interface Arrival {
+interface Arrival {
   seq: number;
   via: VisitVia;
 }
