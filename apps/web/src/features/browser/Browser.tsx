@@ -19,12 +19,26 @@ type LoadedView =
 export function Browser() {
   const session = useSession();
   const { entry, arrival, navigate, saveScroll } = session;
-  const [loaded, setLoaded] = useState<LoadedView | null>(null);
+  // What each entry loaded, by entry id, so returning to an entry shows it instantly (memory only:
+  // after a reload, entries load again).
+  const [cache, setCache] = useState<Record<string, LoadedView>>({});
 
   const address = entry?.kind === 'page' ? entry.address : null;
+  const entryId = entry?.id ?? null;
+  const cached = entryId ? cache[entryId] : undefined;
+  const isReturn = arrival.via === 'back' || arrival.via === 'forward';
+  // Restore on return: back/forward reuse what the entry showed before (unless it was an error).
+  // Any other arrival, including navigating to the same address again, loads fresh.
+  const view =
+    cached && (cached.seq === arrival.seq || (isReturn && cached.status !== 'error'))
+      ? cached
+      : null;
+  const needsLoad = address !== null && view === null;
 
   useEffect(() => {
-    if (address === null) return;
+    if (!needsLoad || address === null || entryId === null) return;
+    const setLoaded = (loaded: LoadedView) =>
+      setCache((previous) => ({ ...previous, [entryId]: loaded }));
     // If the user moves on before this answer arrives, the late answer is ignored.
     let cancelled = false;
     const seq = arrival.seq;
@@ -45,9 +59,7 @@ export function Browser() {
     return () => {
       cancelled = true;
     };
-  }, [address, arrival.seq]);
-
-  const view = loaded?.seq === arrival.seq ? loaded : null;
+  }, [needsLoad, address, entryId, arrival.seq]);
 
   function renderView() {
     if (!entry) {

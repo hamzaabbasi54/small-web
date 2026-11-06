@@ -61,6 +61,8 @@ function storeSession(session: SessionState): void {
 
 // The session to start with when the page loads.
 function initialSession(): SessionState {
+  // We restore scroll positions ourselves, per entry; the browser's own restoring would fight it.
+  window.history.scrollRestoration = 'manual';
   // A reload: the browser still remembers which entry we were on, and sessionStorage has the list.
   const stored = loadStoredSession();
   const historyIndex = readHistoryIndex(window.history.state);

@@ -4,6 +4,9 @@
 
 export const FRAME_MESSAGE_SOURCE = 'smallweb-frame';
 
+// Scroll is reported once scrolling pauses for this long, not on every frame.
+const SCROLL_REPORT_DELAY_MS = 100;
+
 interface FrameDocumentOptions {
   safeHtml: string;
   restoreY: number; // scroll position to return to, 0 for a fresh visit
@@ -36,14 +39,12 @@ function bridgeScript(restoreY: number, parentOrigin: string): string {
     event.preventDefault();
     send({ type: 'navigate', address: link.getAttribute('data-addr') || '' });
   });
-  var scrollQueued = false;
+  var scrollTimer = null;
   window.addEventListener('scroll', function () {
-    if (scrollQueued) return;
-    scrollQueued = true;
-    requestAnimationFrame(function () {
-      scrollQueued = false;
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(function () {
       send({ type: 'scroll', y: window.scrollY });
-    });
+    }, ${toScriptLiteral(SCROLL_REPORT_DELAY_MS)});
   });
   window.addEventListener('load', function () {
     window.scrollTo(0, ${toScriptLiteral(restoreY)});
