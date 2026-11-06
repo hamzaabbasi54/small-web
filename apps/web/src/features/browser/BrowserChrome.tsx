@@ -10,8 +10,13 @@ interface BrowserChromeProps {
   onBack: () => void;
   onForward: () => void;
   onGo: (address: string) => void;
+  query: string; // the current entry's search, '' when it isn't a search
+  onSearch: (query: string) => void;
   children?: ReactNode; // toolbar items on the right
 }
+
+// Matches the API's minimum, so a too-short search is stopped by the browser's form check.
+const MIN_QUERY_LENGTH = 2;
 
 export function BrowserChrome({
   address,
@@ -20,6 +25,8 @@ export function BrowserChrome({
   onBack,
   onForward,
   onGo,
+  query,
+  onSearch,
   children,
 }: BrowserChromeProps) {
   return (
@@ -32,8 +39,37 @@ export function BrowserChrome({
       </button>
       {/* A new key whenever the current address changes throws away any half-typed draft. */}
       <AddressBar key={address} address={address} onGo={onGo} />
+      <SearchBox key={query} query={query} onSearch={onSearch} />
       {children}
     </header>
+  );
+}
+
+interface SearchBoxProps {
+  query: string;
+  onSearch: (query: string) => void;
+}
+
+function SearchBox({ query, onSearch }: SearchBoxProps) {
+  const [draft, setDraft] = useState(query);
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    onSearch(draft.trim());
+  }
+
+  return (
+    <form className="search-box" onSubmit={handleSubmit} role="search">
+      <input
+        aria-label="Search the small web"
+        type="search"
+        value={draft}
+        placeholder="Search"
+        required
+        minLength={MIN_QUERY_LENGTH}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+    </form>
   );
 }
 

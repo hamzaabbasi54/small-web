@@ -1,22 +1,31 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ErrorCode, normalizeAddress, type SiteView, type VisitView } from '@smallweb/shared';
+import {
+  ErrorCode,
+  normalizeAddress,
+  type SearchResultView,
+  type SiteView,
+  type VisitView,
+} from '@smallweb/shared';
 import { HistoryPanel } from '@/features/history/HistoryPanel';
-import { ApiError, getSite, recordVisit } from '@/lib/api-client';
+import { SearchResults } from '@/features/search/SearchResults';
+import { ApiError, getSite, recordVisit, search } from '@/lib/api-client';
 import { PersonPicker } from '@/features/people/PersonPicker';
 import { usePerson } from '@/features/people/use-person';
 import { BrowserChrome } from './BrowserChrome';
 import { NowherePage } from './NowherePage';
 import { PageFrame } from './PageFrame';
 import { StatusLine } from './StatusLine';
-import { useSession } from './use-session';
+import type { SessionEntry } from './session-history';
+import { useSession, type Destination } from './use-session';
 
 // What one arrival at an entry resolved to. `seq` ties it to that arrival: while it doesn't match
 // the current arrival, the view is still loading.
 type LoadedView =
   | { seq: number; status: 'shown'; site: SiteView }
   | { seq: number; status: 'nowhere'; address: string }
+  | { seq: number; status: 'results'; query: string; results: SearchResultView[] }
   | { seq: number; status: 'error'; message: string };
 
 export function Browser() {
@@ -36,24 +45,31 @@ export function Browser() {
     cached && (cached.seq === arrival.seq || (isReturn && cached.status !== 'error'))
       ? cached
       : null;
-  const needsLoad = address !== null && view === null;
+  const query = entry?.kind === 'search' ? entry.query : null;
+  const needsLoad = entry !== null && view === null;
 
   useEffect(() => {
-    if (!needsLoad || address === null || entryId === null) return;
+    if (!needsLoad || entryId === null) return;
     const setLoaded = (loaded: LoadedView) =>
       setCache((previous) => ({ ...previous, [entryId]: loaded }));
     // If the user moves on before this answer arrives, the late answer is ignored.
     let cancelled = false;
     const seq = arrival.seq;
-    getSite(address)
-      .then((site) => {
-        if (!cancelled) setLoaded({ seq, status: 'shown', site });
+
+    const load: Promise<LoadedView> =
+      query !== null
+        ? search(query).then((page) => ({ seq, status: 'results', query, results: page.items }))
+        : getSite(address ?? '').then((site) => ({ seq, status: 'shown', site }));
+
+    load
+      .then((loaded) => {
+        if (!cancelled) setLoaded(loaded);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         // No site at this address is a normal outcome of browsing, not an error.
         if (error instanceof ApiError && error.code === ErrorCode.SITE_NOT_FOUND) {
-          setLoaded({ seq, status: 'nowhere', address });
+          setLoaded({ seq, status: 'nowhere', address: address ?? '' });
           return;
         }
         const message = error instanceof ApiError ? error.message : 'Something went wrong';
@@ -62,7 +78,7 @@ export function Browser() {
     return () => {
       cancelled = true;
     };
-  }, [needsLoad, address, entryId, arrival.seq]);
+  }, [needsLoad, address, query, entryId, arrival.seq]);
 
   const { people, person, choose, forget } = usePerson();
   const personId = person?.id ?? null;
@@ -116,12 +132,23 @@ export function Browser() {
       return (
         <section className="start" role="alert">
           <p>{view.message}</p>
-          {address && (
-            <button type="button" onClick={() => navigate({ kind: 'page', address }, 'typed')}>
-              Try again
-            </button>
-          )}
+          <button type="button" onClick={() => navigate(destinationOf(entry), arrival.via)}>
+            Try again
+          </button>
         </section>
+      );
+    }
+    if (view.status === 'results') {
+      return (
+        <SearchResults
+          // Like the page frame: a fresh list per arrival, scrolled to where this entry was left.
+          key={arrival.seq}
+          query={view.query}
+          results={view.results}
+          restoreY={entry.scrollY}
+          onOpen={(target) => navigate({ kind: 'page', address: target }, 'search')}
+          onScroll={(y) => saveScroll(entry.id, y)}
+        />
       );
     }
     return (
@@ -148,6 +175,9 @@ export function Browser() {
         onBack={session.back}
         onForward={session.forward}
         onGo={(target) => navigate({ kind: 'page', address: target }, 'typed')}
+        query={query ?? ''}
+        // A search is an entry of its own, so back from a result returns to the results.
+        onSearch={(text) => navigate({ kind: 'search', query: text }, 'typed')}
       >
         <button
           type="button"
@@ -177,10 +207,19 @@ export function Browser() {
   );
 }
 
+function destinationOf(entry: SessionEntry): Destination {
+  return entry.kind === 'page'
+    ? { kind: 'page', address: entry.address }
+    : { kind: 'search', query: entry.query };
+}
+
 function statusText(hasEntry: boolean, view: LoadedView | null, priorVisitCount: number): string {
   if (!hasEntry) return 'Ready';
   if (!view) return 'Loading…';
   if (view.status === 'error') return 'Error';
+  if (view.status === 'results') {
+    return `${view.results.length} result${view.results.length === 1 ? '' : 's'} for “${view.query}”`;
+  }
   const state = view.status === 'shown' ? 'Shown' : 'Nowhere';
   if (priorVisitCount === 0) return state;
   const times = priorVisitCount === 1 ? 'once' : `${priorVisitCount} times`;

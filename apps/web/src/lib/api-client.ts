@@ -4,6 +4,7 @@ import type {
   CreateVisitResponse,
   Page,
   PersonView,
+  SearchResultView,
   SiteView,
   VisitView,
 } from '@smallweb/shared';
@@ -51,6 +52,10 @@ export function getSite(address: string): Promise<SiteView> {
 
 export function getPeople(): Promise<Page<PersonView>> {
   return request<Page<PersonView>>('/people');
+}
+
+export function search(query: string): Promise<Page<SearchResultView>> {
+  return request<Page<SearchResultView>>(`/search?q=${encodeURIComponent(query)}`);
 }
 
 // One page of a person's history, newest first. Pass the previous page's nextCursor for the next.
