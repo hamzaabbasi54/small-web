@@ -9,6 +9,7 @@ import {
   type VisitView,
 } from '@smallweb/shared';
 import { HistoryPanel } from '@/features/history/HistoryPanel';
+import { PublishForm } from '@/features/publish/PublishForm';
 import { SearchResults } from '@/features/search/SearchResults';
 import { ApiError, getSite, recordVisit, search } from '@/lib/api-client';
 import { PersonPicker } from '@/features/people/PersonPicker';
@@ -90,6 +91,9 @@ export function Browser() {
   // Visits recorded in this tab, newest first, so an open history panel shows them immediately.
   const [recent, setRecent] = useState<{ personId: string; visits: VisitView[] } | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // The publish form is open for the arrival it was opened on; any navigation closes it.
+  const [publishSeq, setPublishSeq] = useState<number | null>(null);
+  const publishOpen = publishSeq === arrival.seq;
   const recordedSeq = useRef<number | null>(null);
   const resolved = view?.status === 'shown' || view?.status === 'nowhere';
   useEffect(() => {
@@ -118,6 +122,17 @@ export function Browser() {
   const priorVisitCount = priorVisits?.seq === arrival.seq ? priorVisits.count : 0;
 
   function renderView() {
+    if (publishOpen) {
+      return (
+        <PublishForm
+          author={person}
+          // Opening the new site is a navigation like any other, recorded as via publish.
+          onPublished={(target) => navigate({ kind: 'page', address: target }, 'publish')}
+          onPersonGone={forget}
+          onCancel={() => setPublishSeq(null)}
+        />
+      );
+    }
     if (!entry) {
       return (
         <section className="start">
@@ -185,6 +200,13 @@ export function Browser() {
           onClick={() => setHistoryOpen((open) => !open)}
         >
           History
+        </button>
+        <button
+          type="button"
+          aria-pressed={publishOpen}
+          onClick={() => setPublishSeq(publishOpen ? null : arrival.seq)}
+        >
+          Publish
         </button>
         <PersonPicker people={people} person={person} onChoose={choose} />
       </BrowserChrome>

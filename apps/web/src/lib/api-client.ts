@@ -1,5 +1,6 @@
 import type {
   ApiErrorBody,
+  CreateSiteRequest,
   CreateVisitRequest,
   CreateVisitResponse,
   Page,
@@ -52,6 +53,10 @@ export function getSite(address: string): Promise<SiteView> {
 
 export function getPeople(): Promise<Page<PersonView>> {
   return request<Page<PersonView>>('/people');
+}
+
+export function createSite(site: CreateSiteRequest): Promise<SiteView> {
+  return request<SiteView>('/sites', { method: 'POST', body: JSON.stringify(site) });
 }
 
 export function search(query: string): Promise<Page<SearchResultView>> {

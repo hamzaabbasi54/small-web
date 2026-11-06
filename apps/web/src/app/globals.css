@@ -97,6 +97,49 @@ body {
   margin-top: 0.35rem;
 }
 
+.publish-form {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.publish-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.publish-form input,
+.publish-form textarea {
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  font-weight: normal;
+}
+
+.publish-form textarea {
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.field-error {
+  margin: 0;
+  color: #b3261e;
+}
+
+.publish-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.publish-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .person-picker {
   display: flex;
   align-items: center;
