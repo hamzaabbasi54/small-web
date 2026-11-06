@@ -5,6 +5,7 @@ import type {
   Page,
   PersonView,
   SiteView,
+  VisitView,
 } from '@smallweb/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
@@ -50,6 +51,12 @@ export function getSite(address: string): Promise<SiteView> {
 
 export function getPeople(): Promise<Page<PersonView>> {
   return request<Page<PersonView>>('/people');
+}
+
+// One page of a person's history, newest first. Pass the previous page's nextCursor for the next.
+export function getVisits(personId: string, cursor: string | null): Promise<Page<VisitView>> {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  return request<Page<VisitView>>(`/people/${encodeURIComponent(personId)}/visits${query}`);
 }
 
 export function recordVisit(

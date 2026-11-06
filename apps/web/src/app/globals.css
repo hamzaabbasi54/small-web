@@ -62,10 +62,73 @@ body {
   border-bottom: 1px solid var(--line);
 }
 
-.view {
+/* Everything under the status line: the page, and the history panel beside it when open. */
+.body {
   flex: 1;
   min-height: 0;
+  display: flex;
+}
+
+.view {
+  flex: 1;
+  min-width: 0;
   overflow: auto;
+}
+
+.history-panel {
+  width: 20rem;
+  overflow: auto;
+  border-left: 1px solid var(--line);
+  background: #fff;
+}
+
+.history-panel h2 {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 1rem;
+}
+
+.history-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-panel li button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font: inherit;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.history-panel li button:hover {
+  background: var(--paper);
+}
+
+.history-title {
+  display: block;
+}
+
+.nowhere-mark {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.history-meta {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.history-end {
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
 }
 
 .start,

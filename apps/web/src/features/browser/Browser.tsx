@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ErrorCode, normalizeAddress, type SiteView } from '@smallweb/shared';
+import { ErrorCode, normalizeAddress, type SiteView, type VisitView } from '@smallweb/shared';
+import { HistoryPanel } from '@/features/history/HistoryPanel';
 import { ApiError, getSite, recordVisit } from '@/lib/api-client';
 import { PersonPicker } from '@/features/people/PersonPicker';
 import { usePerson } from '@/features/people/use-person';
@@ -70,6 +71,9 @@ export function Browser() {
   // The answer says how often this person was here before: the brief's "In history" state is
   // derived from that, not stored.
   const [priorVisits, setPriorVisits] = useState<{ seq: number; count: number } | null>(null);
+  // Visits recorded in this tab, newest first, so an open history panel shows them immediately.
+  const [recent, setRecent] = useState<{ personId: string; visits: VisitView[] } | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const recordedSeq = useRef<number | null>(null);
   const resolved = view?.status === 'shown' || view?.status === 'nowhere';
   useEffect(() => {
@@ -78,7 +82,16 @@ export function Browser() {
     recordedSeq.current = arrival.seq;
     const seq = arrival.seq;
     recordVisit(personId, { address, via: arrival.via })
-      .then((response) => setPriorVisits({ seq, count: response.priorVisitCount }))
+      .then((response) => {
+        setPriorVisits({ seq, count: response.priorVisitCount });
+        setRecent((previous) => ({
+          personId,
+          visits:
+            previous?.personId === personId
+              ? [response.visit, ...previous.visits]
+              : [response.visit],
+        }));
+      })
       .catch((error: unknown) => {
         // The chosen person no longer exists: forget them so the picker falls back to someone real.
         if (error instanceof ApiError && error.code === ErrorCode.PERSON_NOT_FOUND) forget();
@@ -136,10 +149,30 @@ export function Browser() {
         onForward={session.forward}
         onGo={(target) => navigate({ kind: 'page', address: target }, 'typed')}
       >
+        <button
+          type="button"
+          aria-pressed={historyOpen}
+          onClick={() => setHistoryOpen((open) => !open)}
+        >
+          History
+        </button>
         <PersonPicker people={people} person={person} onChoose={choose} />
       </BrowserChrome>
       <StatusLine text={statusText(entry !== null, view, priorVisitCount)} />
-      <main className="view">{renderView()}</main>
+      <div className="body">
+        <main className="view">{renderView()}</main>
+        {historyOpen && personId && (
+          <HistoryPanel
+            // A new person gets a fresh panel that starts loading from the top.
+            key={personId}
+            personId={personId}
+            recentVisits={recent?.personId === personId ? recent.visits : []}
+            // Like a real browser's history page: opening an old entry is a new navigation,
+            // so it drops anything forward of the current entry.
+            onOpen={(target) => navigate({ kind: 'page', address: target }, 'history')}
+          />
+        )}
+      </div>
     </div>
   );
 }
