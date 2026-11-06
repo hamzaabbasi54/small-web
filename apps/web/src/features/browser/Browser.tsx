@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ErrorCode, normalizeAddress, type SiteView } from '@smallweb/shared';
-import { ApiError, getSite } from '@/lib/api-client';
+import { ApiError, getPeople, getSite, recordVisit } from '@/lib/api-client';
 import { BrowserChrome } from './BrowserChrome';
 import { NowherePage } from './NowherePage';
 import { PageFrame } from './PageFrame';
@@ -61,6 +61,33 @@ export function Browser() {
     };
   }, [needsLoad, address, entryId, arrival.seq]);
 
+  // Who is browsing. For now the first person; the person picker replaces this.
+  const [personId, setPersonId] = useState<string | null>(null);
+  useEffect(() => {
+    getPeople()
+      .then((people) => setPersonId(people.items[0]?.id ?? null))
+      .catch(() => setPersonId(null));
+  }, []);
+
+  // Every arrival that resolves to a page or to Nowhere is a visit, including back and forward.
+  // The answer says how often this person was here before: the brief's "In history" state is
+  // derived from that, not stored.
+  const [priorVisits, setPriorVisits] = useState<{ seq: number; count: number } | null>(null);
+  const recordedSeq = useRef<number | null>(null);
+  const resolved = view?.status === 'shown' || view?.status === 'nowhere';
+  useEffect(() => {
+    if (!resolved || address === null || personId === null) return;
+    if (recordedSeq.current === arrival.seq) return;
+    recordedSeq.current = arrival.seq;
+    const seq = arrival.seq;
+    recordVisit(personId, { address, via: arrival.via })
+      .then((response) => setPriorVisits({ seq, count: response.priorVisitCount }))
+      .catch(() => {
+        // Recording history must never get in the way of reading: the page stays as it is.
+      });
+  }, [resolved, address, personId, arrival.seq, arrival.via]);
+  const priorVisitCount = priorVisits?.seq === arrival.seq ? priorVisits.count : 0;
+
   function renderView() {
     if (!entry) {
       return (
@@ -109,16 +136,18 @@ export function Browser() {
         onForward={session.forward}
         onGo={(target) => navigate({ kind: 'page', address: target }, 'typed')}
       />
-      <StatusLine text={statusText(entry !== null, view)} />
+      <StatusLine text={statusText(entry !== null, view, priorVisitCount)} />
       <main className="view">{renderView()}</main>
     </div>
   );
 }
 
-function statusText(hasEntry: boolean, view: LoadedView | null): string {
+function statusText(hasEntry: boolean, view: LoadedView | null, priorVisitCount: number): string {
   if (!hasEntry) return 'Ready';
   if (!view) return 'Loading…';
-  if (view.status === 'shown') return 'Shown';
-  if (view.status === 'nowhere') return 'Nowhere';
-  return 'Error';
+  if (view.status === 'error') return 'Error';
+  const state = view.status === 'shown' ? 'Shown' : 'Nowhere';
+  if (priorVisitCount === 0) return state;
+  const times = priorVisitCount === 1 ? 'once' : `${priorVisitCount} times`;
+  return `${state} · In history: visited ${times} before`;
 }

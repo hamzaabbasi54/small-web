@@ -1,4 +1,11 @@
-import type { ApiErrorBody, Page, PersonView, SiteView } from '@smallweb/shared';
+import type {
+  ApiErrorBody,
+  CreateVisitRequest,
+  CreateVisitResponse,
+  Page,
+  PersonView,
+  SiteView,
+} from '@smallweb/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
@@ -43,4 +50,14 @@ export function getSite(address: string): Promise<SiteView> {
 
 export function getPeople(): Promise<Page<PersonView>> {
   return request<Page<PersonView>>('/people');
+}
+
+export function recordVisit(
+  personId: string,
+  visit: CreateVisitRequest,
+): Promise<CreateVisitResponse> {
+  return request<CreateVisitResponse>(`/people/${encodeURIComponent(personId)}/visits`, {
+    method: 'POST',
+    body: JSON.stringify(visit),
+  });
 }
