@@ -38,8 +38,9 @@ export function BrowserChrome({
         ▶
       </button>
       {/* A new key whenever the current address changes throws away any half-typed draft. */}
-      <AddressBar key={address} address={address} onGo={onGo} />
-      <SearchBox key={query} query={query} onSearch={onSearch} />
+      {/* Prefixed so the two keys can never be equal (both are '' on the start page). */}
+      <AddressBar key={`address:${address}`} address={address} onGo={onGo} />
+      <SearchBox key={`search:${query}`} query={query} onSearch={onSearch} />
       {children}
     </header>
   );
