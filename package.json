@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "lint": "node scripts/run-in-workspaces.mjs lint",
     "typecheck": "node scripts/run-in-workspaces.mjs typecheck",
-    "seed": "npm run seed --workspace=api"
+    "seed": "npm run seed --workspace=api",
+    "test": "node scripts/run-in-workspaces.mjs test"
   },
   "devDependencies": {
     "eslint": "^10.14.0",
