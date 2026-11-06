@@ -43,6 +43,17 @@ body {
   font: inherit;
 }
 
+.person-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.person-picker select {
+  font: inherit;
+}
+
 .status-line {
   margin: 0;
   padding: 0.25rem 0.75rem;

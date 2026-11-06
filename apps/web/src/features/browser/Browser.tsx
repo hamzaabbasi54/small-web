@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ErrorCode, normalizeAddress, type SiteView } from '@smallweb/shared';
-import { ApiError, getPeople, getSite, recordVisit } from '@/lib/api-client';
+import { ApiError, getSite, recordVisit } from '@/lib/api-client';
+import { PersonPicker } from '@/features/people/PersonPicker';
+import { usePerson } from '@/features/people/use-person';
 import { BrowserChrome } from './BrowserChrome';
 import { NowherePage } from './NowherePage';
 import { PageFrame } from './PageFrame';
@@ -61,13 +63,8 @@ export function Browser() {
     };
   }, [needsLoad, address, entryId, arrival.seq]);
 
-  // Who is browsing. For now the first person; the person picker replaces this.
-  const [personId, setPersonId] = useState<string | null>(null);
-  useEffect(() => {
-    getPeople()
-      .then((people) => setPersonId(people.items[0]?.id ?? null))
-      .catch(() => setPersonId(null));
-  }, []);
+  const { people, person, choose, forget } = usePerson();
+  const personId = person?.id ?? null;
 
   // Every arrival that resolves to a page or to Nowhere is a visit, including back and forward.
   // The answer says how often this person was here before: the brief's "In history" state is
@@ -82,10 +79,13 @@ export function Browser() {
     const seq = arrival.seq;
     recordVisit(personId, { address, via: arrival.via })
       .then((response) => setPriorVisits({ seq, count: response.priorVisitCount }))
-      .catch(() => {
-        // Recording history must never get in the way of reading: the page stays as it is.
+      .catch((error: unknown) => {
+        // The chosen person no longer exists: forget them so the picker falls back to someone real.
+        if (error instanceof ApiError && error.code === ErrorCode.PERSON_NOT_FOUND) forget();
+        // Any other failure is ignored on purpose: recording history must never get in the way
+        // of reading, so the page stays as it is.
       });
-  }, [resolved, address, personId, arrival.seq, arrival.via]);
+  }, [resolved, address, personId, arrival.seq, arrival.via, forget]);
   const priorVisitCount = priorVisits?.seq === arrival.seq ? priorVisits.count : 0;
 
   function renderView() {
@@ -135,7 +135,9 @@ export function Browser() {
         onBack={session.back}
         onForward={session.forward}
         onGo={(target) => navigate({ kind: 'page', address: target }, 'typed')}
-      />
+      >
+        <PersonPicker people={people} person={person} onChoose={choose} />
+      </BrowserChrome>
       <StatusLine text={statusText(entry !== null, view, priorVisitCount)} />
       <main className="view">{renderView()}</main>
     </div>

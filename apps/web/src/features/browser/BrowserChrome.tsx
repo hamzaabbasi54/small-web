@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { normalizeAddress } from '@smallweb/shared';
 
 interface BrowserChromeProps {
@@ -10,6 +10,7 @@ interface BrowserChromeProps {
   onBack: () => void;
   onForward: () => void;
   onGo: (address: string) => void;
+  children?: ReactNode; // toolbar items on the right
 }
 
 export function BrowserChrome({
@@ -19,6 +20,7 @@ export function BrowserChrome({
   onBack,
   onForward,
   onGo,
+  children,
 }: BrowserChromeProps) {
   return (
     <header className="chrome">
@@ -30,6 +32,7 @@ export function BrowserChrome({
       </button>
       {/* A new key whenever the current address changes throws away any half-typed draft. */}
       <AddressBar key={address} address={address} onGo={onGo} />
+      {children}
     </header>
   );
 }
