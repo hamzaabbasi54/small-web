@@ -1,6 +1,8 @@
 :root {
   --ink: #16212c;
+  --ink-soft: #5b6873;
   --paper: #f1f4f3;
+  --line: #d3dbd8;
   --font: 'Segoe UI', system-ui, sans-serif;
 }
 
@@ -11,6 +13,51 @@ body {
   font-family: var(--font);
 }
 
+/* The browser fills the window: chrome and status line on top, the page below. */
+.browser {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.chrome {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.chrome button {
+  min-width: 2.25rem;
+  font: inherit;
+}
+
+.address-bar {
+  flex: 1;
+  display: flex;
+}
+
+.address-bar input {
+  flex: 1;
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+}
+
+.status-line {
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.start,
 .nowhere {
   max-width: 42rem;
   margin: 0 auto;
@@ -20,7 +67,7 @@ body {
 .page-frame {
   display: block;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   border: 0;
   background: #fff;
 }
