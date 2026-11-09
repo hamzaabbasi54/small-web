@@ -23,7 +23,7 @@ function toScriptLiteral(value: string | number): string {
 // - a click on a link sends { type: 'navigate', address } to the parent instead of following it
 //   (every link is href="#" with the destination in data-addr, see the API's html-sanitizer)
 // - scrolling sends { type: 'scroll', y } so the parent can restore the position later
-// - on load it scrolls back to restoreY
+// - on load it scrolls back to restoreY, retrying until the frame is tall enough to get there
 function bridgeScript(restoreY: number, parentOrigin: string): string {
   return `
 (function () {
@@ -46,9 +46,19 @@ function bridgeScript(restoreY: number, parentOrigin: string): string {
       send({ type: 'scroll', y: window.scrollY });
     }, ${toScriptLiteral(SCROLL_REPORT_DELAY_MS)});
   });
-  window.addEventListener('load', function () {
-    window.scrollTo(0, ${toScriptLiteral(restoreY)});
-  });
+  // When load fires the frame may not have its final size yet, and the browser cuts a scroll past
+  // the bottom short (often to 0). So try again on each animation frame until the position holds,
+  // giving up after about a second.
+  var RESTORE_Y = ${toScriptLiteral(restoreY)};
+  var restoreTries = 0;
+  function restoreScroll() {
+    window.scrollTo(0, RESTORE_Y);
+    restoreTries += 1;
+    if (Math.abs(window.scrollY - RESTORE_Y) > 1 && restoreTries < 60) {
+      requestAnimationFrame(restoreScroll);
+    }
+  }
+  window.addEventListener('load', restoreScroll);
 })();`;
 }
 
